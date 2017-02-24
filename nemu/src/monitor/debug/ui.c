@@ -50,7 +50,10 @@ static int cmd_si(char *args){
 
 static int cmd_info(char *args){
 	char *pOpt=strtok(NULL," ");
-	if(!strcmp(pOpt,"r")){
+	if(pOpt==NULL || strcmp(pOpt,"r")){
+		printf("invalid input!\n");
+	}
+	else{
 		int i;
 		for(i=0;i<8;i++)
 			printf("%s        0x%08x        %d\n",regsl[i],reg_l(i),reg_l(i));
@@ -62,9 +65,6 @@ static int cmd_info(char *args){
 			printf("%s        0x%08x        %d\n",regsb[i],reg_b(i),reg_b(i));
 		printf("--------------------------------------------\n");
 		printf("eip        0x%08x        %d\n",cpu.eip,cpu.eip);
-	}
-	else{
-		printf("invalid input!\n");
 	}
 	return 0;
 }

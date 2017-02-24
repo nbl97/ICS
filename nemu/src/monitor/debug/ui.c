@@ -51,16 +51,17 @@ static int cmd_si(char *args){
 static int cmd_info(char *args){
 	char *pOpt=strtok(NULL," ");
 	if(!strcmp(pOpt,"r")){
-		for(int i=0;i<8;i++)
+		int i;
+		for(i=0;i<8;i++)
 			printf("%s        0x%08x        %d\n",regsl[i],reg_l(i),reg_l(i));
 		printf("--------------------------------------------\n");
-		for(int i=0;i<8;i++)
+		for(i=0;i<8;i++)
 			printf("%s        0x%08x        %d\n",regsw[i],reg_w(i),reg_w(i));
 		printf("--------------------------------------------\n");
-		for(int i=0;i<8;i++)
+		for(i=0;i<8;i++)
 			printf("%s        0x%08x        %d\n",regsb[i],reg_b(i),reg_b(i));
 		printf("--------------------------------------------\n");
-		printf("eip        0x%08x        %d\n",cpu.eip,cup.eip);
+		printf("eip        0x%08x        %d\n",cpu.eip,cpu.eip);
 	}
 	else{
 		printf("invalid input!\n");

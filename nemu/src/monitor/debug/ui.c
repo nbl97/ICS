@@ -48,6 +48,26 @@ static int cmd_si(char *args){
 	return 0;
 }
 
+static int cmd_info(char *args){
+	char *pOpt=strtok(NULL," ");
+	if(!strcmp(pOpt,"r")){
+		for(int i=0;i<8;i++)
+			printf("%s        0x%08x        %d\n",regsl[i],reg_l(i),reg_l(i));
+		printf("--------------------------------------------\n");
+		for(int i=0;i<8;i++)
+			printf("%s        0x%08x        %d\n",regsw[i],reg_w(i),reg_w(i));
+		printf("--------------------------------------------\n");
+		for(int i=0;i<8;i++)
+			printf("%s        0x%08x        %d\n",regsb[i],reg_b(i),reg_b(i));
+		printf("--------------------------------------------\n");
+		printf("eip        0x%08x        %d\n",cpu.eip,cup.eip);
+	}
+	else{
+		printf("invalid input!\n");
+	}
+	return 0;
+}
+
 static int cmd_help(char *args);
 
 static struct {
@@ -58,7 +78,8 @@ static struct {
 	{ "help", "Display informations about all supported commands", cmd_help },
 	{ "c", "Continue the execution of the program", cmd_c },
 	{ "q", "Exit NEMU", cmd_q },
-	{ "si","Single Step", cmd_si},
+	{ "si","Single Step", cmd_si },
+	{ "info","Print Program Status", cmd_info },
 
 	/* TODO: Add more commands */
 

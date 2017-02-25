@@ -74,8 +74,9 @@ static int cmd_x(char *agrs){
 	pn=strtok(NULL," ");
 	paddr=strtok(NULL," ");
 	if(pn!=NULL && paddr!=NULL){
-		int n=atoi(pn),addr=sscanf(paddr,"0x%x",&addr);
-		printf("start addr:0x%8x,len = %d\n",addr,n);
+		int n=atoi(pn),addr;
+		sscanf(paddr,"0x%x",&addr);
+		printf("start addr:0x%08x,len = %d\n",addr,n);
 		int i;
 		for(i=0;i<n;i++){
 			if(!(i%5))	printf("\n0x%08x:",addr+i);

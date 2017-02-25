@@ -69,6 +69,23 @@ static int cmd_info(char *args){
 	return 0;
 }
 
+static int cmd_x(char *agrs){
+	char *pn,*paddr;
+	pn=strtok(NULL," ");
+	paddr=strtok(NULL," ");
+	if(pn!=NULL && paddr!=NULL){
+		int n=atoi(pn),addr=sscanf(paddr,"0x%x",&addr);
+		printf("start addr:0x%8x,len = %d\n",addr,n);
+		int i;
+		for(i=0;i<n;i++){
+			if(!(i%5))	printf("\n0x%08x:",addr+i);
+			printf("  %02x",swaddr_read(addr+i,1));
+		}
+		puts("");
+	}
+	return 0;
+}
+
 static int cmd_help(char *args);
 
 static struct {
@@ -81,7 +98,7 @@ static struct {
 	{ "q", "Exit NEMU", cmd_q },
 	{ "si","Single Step", cmd_si },
 	{ "info","Print Program Status", cmd_info },
-
+	{ "x", "Scan Memory", cmd_x },
 	/* TODO: Add more commands */
 
 };

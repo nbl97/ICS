@@ -99,11 +99,14 @@ static bool make_token(char *e) {
 				 * to record the token in the array ''tokens''. For certain 
 				 * types of tokens, some extra actions should be performed.
 				 */
-				
-				switch(rules[i].token_type) {
-					default: panic("please implement me");
-				}
 
+				assert(substr_len < 32);
+				if (rules[i].token_type != NOTYPE) {
+					tokens[nr_token].type = rules[i].token_type;
+					strncpy(tokens[nr_token].str,substr_start,substr_len);
+					tokens[nr_token].str[substr_len] = '\0';
+					nr_token++;
+				}
 				break;
 			}
 		}
@@ -115,6 +118,78 @@ static bool make_token(char *e) {
 	}
 
 	return true; 
+}
+
+static bool check_parentheses(int p, int q) {
+	//先检测语法上括号匹配是否正确
+	int level = 0, i;
+	for (i = p;i <= q;i++) {
+		if (level < 0) {
+			printf("Invalid expression.\n");
+			assert(0);
+		}
+		if (tokens[i].type == '(')	level++;
+		else if (tokens[i].type == ')')	level--;
+	}
+	if (level != 0) {
+		printf("Invalid expression.\n");
+		assert(0);
+	}
+	//再检测表达式是否被一对括号括住
+	if(tokens[p].type == '(' && tokens[q].type == ')'){
+		level = 0;
+		for (int i = p;i <= q;i++) {
+			if (level == 0 && i != p)	return false;
+			if (tokens[i].type == '(')	level++;
+			else if (tokens[i].type == ')')	level--;
+		}
+		return true;
+	}
+	return false;
+}
+
+bool isOperator(int type) {
+	if (type == '!' || type == '~' || type =='*' || type == '/'
+		|| type == '%' || type == '+' || type == '-' || type == LS
+		|| type == RS || type == '>' || type == '<' || type == GOE
+		|| type == LOE || type == EQ || type == UEQ || type == '&'
+		|| type == '^' || type == '|' || type == AND || type == OR)
+		return true;
+	return false;
+}
+static int dominant_operator(int p,int q) {
+	int weight[300], i, j,ans=1000,ret;
+	memset(weight,0x3f,sizeof(weight));
+	weight['!'] = weight['~'] = 10;
+	weight['*'] = weight['/'] = weight['%'] = 9;
+	weight['+'] = weight['-'] = 8;
+	weight[LS] = weight[RS] = 7;
+	weight['>'] = weight['<'] = weight[GOE] = weight[LOE] = 6;
+	weight[EQ] = weight[UEQ] = 5;
+	weight['&'] = 4;
+	weight['^'] = 3;
+	weight['|'] = 2;
+	weight[AND] = 1;
+	weight[OR] = 0;
+	for (i = p;i <= q;i++) {
+		if (tokens[i].type == '(') {
+			for(j=i;;j++){
+				if(tokens[j].type == ')'){
+					break;
+				}
+			}
+			i=j+1;
+			if(i>q)	break;
+			continue;
+		}
+		if (isOperator(tokens[i].type)) {
+			if(weight[tokens[i].type] <= ans){
+				ans = weight[tokens[i].type];
+				ret = i;
+			}
+		}
+	}
+	return ret;
 }
 
 uint32_t expr(char *e, bool *success) {

@@ -7,10 +7,9 @@
 #include <regex.h>
 
 enum {
-	NOTYPE = 256, EQ
-
+	NOTYPE = 256, EQ, UEQ, LS, RS, 
+	AND, OR, GOE, LOE, HEX, DEC, REG
 	/* TODO: Add more token types */
-
 };
 
 static struct rule {
@@ -24,7 +23,30 @@ static struct rule {
 
 	{" +",	NOTYPE},				// spaces
 	{"\\+", '+'},					// plus
-	{"==", EQ}						// equal
+	{"==", EQ},						// equal
+	{"!=", UEQ},                    //不等
+	{"-", '-'},                     //减
+	{"\\*", '*'},                   //乘
+	{"/", '/'},                     //除
+	{"%", '%'},                     //取余
+	{"\\(", '('},                   //左括号
+	{"\\)", ')'},                   //右括号
+	{"&", '&'},                     //与
+	{"\\|", '|'},                   //或
+	{"~", '~'},                     //非
+	{"\\^", '^'},                   //异或
+	{"<<", LS},                     //左移
+	{">>", RS},                     //右移
+	{"&&", AND},                    //逻辑与
+	{"\\|\\|", OR},                 //逻辑或
+	{"!", '!'},                     //逻辑非
+	{">", '>'},                     //大于
+	{">=", GOE},                    //大于等于
+	{"<", '<'},                     //小于
+	{"<=", LOE},                    //小于等于
+	{"0[xX][0-9a-fA-F]+", HEX},    //十六进制数
+	{"[0-9]+", DEC},                 //十进制数
+	{"\\$[a-z]{2,4}", REG}          //寄存器
 };
 
 #define NR_REGEX (sizeof(rules) / sizeof(rules[0]) )
@@ -74,10 +96,10 @@ static bool make_token(char *e) {
 				position += substr_len;
 
 				/* TODO: Now a new token is recognized with rules[i]. Add codes
-				 * to record the token in the array ``tokens''. For certain 
+				 * to record the token in the array ''tokens''. For certain 
 				 * types of tokens, some extra actions should be performed.
 				 */
-
+				
 				switch(rules[i].token_type) {
 					default: panic("please implement me");
 				}
@@ -105,4 +127,3 @@ uint32_t expr(char *e, bool *success) {
 	panic("please implement me");
 	return 0;
 }
-

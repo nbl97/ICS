@@ -8,7 +8,8 @@
 #include <stdlib.h>
 enum {
 	NOTYPE = 256, EQ, UEQ, LS, RS, 
-	AND, OR, GOE, LOE, HEX, DEC, REG
+	AND, OR, GOE, LOE, HEX, DEC, REG,
+	DEREF, NEG
 	/* TODO: Add more token types */
 };
 
@@ -149,16 +150,16 @@ static bool check_parentheses(int p, int q) {
 }
 
 bool isOperator(int type) {
-	if (type == '!' || type == '~' || type =='*' || type == '/'
-		|| type == '%' || type == '+' || type == '-' || type == LS
-		|| type == RS || type == '>' || type == '<' || type == GOE
-		|| type == LOE || type == EQ || type == UEQ || type == '&'
-		|| type == '^' || type == '|' || type == AND || type == OR)
+	if (type =='*' || type == '/'|| type == '%' || type == '+' 
+		|| type == '-' || type == LS|| type == RS || type == '>'
+		|| type == '<' || type == GOE || type == LOE || type == EQ
+		|| type == UEQ || type == '&' || type == '^' || type == '|'
+		|| type == AND || type == OR)
 		return true;
 	return false;
 }
 static int dominant_operator(int p,int q) {
-	int weight[300], i, j,ans=1000,ret = -1;
+	int weight[300], i, j,ans=1000,ret = p;
 	memset(weight,0x3f,sizeof(weight));
 	weight['!'] = weight['~'] = 10;
 	weight['*'] = weight['/'] = weight['%'] = 9;
@@ -191,30 +192,35 @@ static int dominant_operator(int p,int q) {
 	}
 	return ret;
 }
-static int eval(int p,int q) {
-	int op, val1, val2;
+static uint32_t eval(int p,int q) {
+	int op;
+	uint32_t val1, val2;
 	if (p > q) {
 		printf("Invalid Expression.\n");
 		assert(0);
 	}else if (p == q) {
-		if (tokens[p].type == DEC){
+		if (tokens[p].type == DEC) {
 			return atoi(tokens[p].str);
-		}else if (tokens[p].type == HEX){
-			int a;
+		}else if (tokens[p].type == HEX) {
+			uint32_t a;
 			sscanf(tokens[p].str,"%x",&a);
 			return a;
-		}else if(tokens[p].type == REG) {
+		}else if (tokens[p].type == REG) {
 			int i;
 			for(i = 0;i < 8;i++) {
-				if(strcmp(tokens[p].str,regsl[i]) == 0)	return reg_l(i);
-				if(strcmp(tokens[p].str,regsw[i]) == 0)	return reg_w(i);
-				if(strcmp(tokens[p].str,regsb[i]) == 0)	return reg_b(i);
+				if(strcmp(tokens[p].str + 1,regsl[i]) == 0)	return reg_l(i);
+				if(strcmp(tokens[p].str + 1,regsw[i]) == 0)	return reg_w(i);
+				if(strcmp(tokens[p].str + 1,regsb[i]) == 0)	return reg_b(i);
 			}
 		}
 	}else if (check_parentheses(p,q) == true) {
 		return eval(p+1,q-1);
 	}else {
 		op = dominant_operator(p,q);
+		if (tokens[op].type == NEG)	return -eval(op+1,q);
+		if (tokens[op].type == DEREF)	return swaddr_read(eval(op + 1,q),1);
+		if (tokens[op].type == '~')	return ~eval(op + 1,q);
+		if (tokens[op].type == '!')	return !eval(op + 1,q);
 		val1 = eval(p, op - 1);
 		val2 = eval(op + 1,q);
 		switch(tokens[op].type) {
@@ -242,12 +248,22 @@ static int eval(int p,int q) {
 	return 0;
 }
 uint32_t expr(char *e, bool *success) {
-	int ans;
-	if(!make_token(e)) {
+	int i;
+	if (!make_token(e)) {
 		*success = false;
 		return 0;
 	}
-	ans = eval(0,nr_token-1);
+	for (i = 0;i < nr_token;i++) {
+		if (tokens[i].type == '-' && (i==0 || isOperator(tokens[i - 1].type) || 
+			tokens[i - 1].type == '(' || tokens[i - 1].type == NEG)) {
+			tokens[i].type = NEG;
+		}
+		if (tokens[i].type == '*' && (i==0 || isOperator(tokens[i - 1].type) || 
+			tokens[i - 1].type == '(' || tokens[i - 1].type == NEG)) {
+			tokens[i].type = DEREF;
+		}
+		
+	}
 	/* TODO: Insert codes to evaluate the expression. */
-	return ans;
+	return eval(0,nr_token-1);
 }

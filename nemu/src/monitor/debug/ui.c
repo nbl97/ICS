@@ -74,9 +74,8 @@ static int cmd_x(char *agrs){
 	pn=strtok(NULL," ");
 	paddr=strtok(NULL," ");
 	if(pn!=NULL && paddr!=NULL){
-		int n=atoi(pn),addr;
-		sscanf(paddr,"0x%x",&addr);
-		printf("start addr:0x%08x,len = %d\n",addr,n);
+		int n=atoi(pn),addr=sscanf(paddr,"0x%x",&addr);
+		printf("start addr:0x%8x,len = %d\n",addr,n);
 		int i;
 		for(i=0;i<n;i++){
 			if(!(i%5))	printf("\n0x%08x:",addr+i);
@@ -87,6 +86,17 @@ static int cmd_x(char *agrs){
 	return 0;
 }
 
+static int cmd_p(char *args) {
+	int ans;
+	bool success = true;
+	ans = expr(args,&success);
+	if (success == false) {
+		printf("Invalid Expression.\n");
+	}else{
+		printf("%d\n",ans);
+	}
+	return 0;
+}
 static int cmd_help(char *args);
 
 static struct {
@@ -100,6 +110,7 @@ static struct {
 	{ "si","Single Step", cmd_si },
 	{ "info","Print Program Status", cmd_info },
 	{ "x", "Scan Memory", cmd_x },
+	{ "p", "Calc the Expression", cmd_p },
 	/* TODO: Add more commands */
 
 };

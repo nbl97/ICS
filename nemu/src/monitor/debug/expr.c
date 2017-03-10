@@ -5,7 +5,7 @@
  */
 #include <sys/types.h>
 #include <regex.h>
-
+#include <stdlib.h>
 enum {
 	NOTYPE = 256, EQ, UEQ, LS, RS, 
 	AND, OR, GOE, LOE, HEX, DEC, REG
@@ -138,7 +138,7 @@ static bool check_parentheses(int p, int q) {
 	//再检测表达式是否被一对括号括住
 	if(tokens[p].type == '(' && tokens[q].type == ')'){
 		level = 0;
-		for (int i = p;i <= q;i++) {
+		for (i = p;i <= q;i++) {
 			if (level == 0 && i != p)	return false;
 			if (tokens[i].type == '(')	level++;
 			else if (tokens[i].type == ')')	level--;
@@ -158,7 +158,7 @@ bool isOperator(int type) {
 	return false;
 }
 static int dominant_operator(int p,int q) {
-	int weight[300], i, j,ans=1000,ret;
+	int weight[300], i, j,ans=1000,ret = -1;
 	memset(weight,0x3f,sizeof(weight));
 	weight['!'] = weight['~'] = 10;
 	weight['*'] = weight['/'] = weight['%'] = 9;
@@ -178,8 +178,8 @@ static int dominant_operator(int p,int q) {
 					break;
 				}
 			}
-			i=j+1;
-			if(i>q)	break;
+			i=j;
+			if(i>=q)	break;
 			continue;
 		}
 		if (isOperator(tokens[i].type)) {
@@ -191,14 +191,63 @@ static int dominant_operator(int p,int q) {
 	}
 	return ret;
 }
-
+static int eval(int p,int q) {
+	int op, val1, val2;
+	if (p > q) {
+		printf("Invalid Expression.\n");
+		assert(0);
+	}else if (p == q) {
+		if (tokens[p].type == DEC){
+			return atoi(tokens[p].str);
+		}else if (tokens[p].type == HEX){
+			int a;
+			sscanf(tokens[p].str,"%x",&a);
+			return a;
+		}else if(tokens[p].type == REG) {
+			int i;
+			for(i = 0;i < 8;i++) {
+				if(strcmp(tokens[p].str,regsl[i]) == 0)	return reg_l(i);
+				if(strcmp(tokens[p].str,regsw[i]) == 0)	return reg_w(i);
+				if(strcmp(tokens[p].str,regsb[i]) == 0)	return reg_b(i);
+			}
+		}
+	}else if (check_parentheses(p,q) == true) {
+		return eval(p+1,q-1);
+	}else {
+		op = dominant_operator(p,q);
+		val1 = eval(p, op - 1);
+		val2 = eval(op + 1,q);
+		switch(tokens[op].type) {
+			case '+' : return val1 + val2;
+			case '-' : return val1 - val2;
+			case '*' : return val1 * val2;
+			case '/' : return val1 / val2;
+			case '%' : return val1 % val2;
+			case EQ  : return val1 == val2;
+			case UEQ : return val1 != val2;
+			case '&' : return val1 & val2;
+			case '|' : return val1 | val2;
+			case '^' : return val1 ^ val2;
+			case LS  : return val1 << val2;
+			case RS  : return val1 >> val2;
+			case AND : return val1 && val2;
+			case OR  : return val1 || val2;
+			case '>' : return val1 > val2;
+			case GOE : return val1 >= val2;
+			case '<' : return val1 < val2;
+			case LOE : return val1 <= val2;
+			default  : assert(0);
+		}
+	}
+	return 0;
+}
 uint32_t expr(char *e, bool *success) {
+	int ans;
 	if(!make_token(e)) {
 		*success = false;
 		return 0;
 	}
-
+	ans = eval(0,nr_token-1);
 	/* TODO: Insert codes to evaluate the expression. */
-	panic("please implement me");
-	return 0;
+	return ans;
 }

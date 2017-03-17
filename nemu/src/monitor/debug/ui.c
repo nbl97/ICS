@@ -36,50 +36,52 @@ static int cmd_q(char *args) {
 	return -1;
 }
 
-static int cmd_si(char *args){
-	char *pSteps=strtok(NULL," ");
-	if(pSteps==NULL)	cpu_exec(1);
-	else{
-		int nSteps=atoi(pSteps);
-		if(nSteps==0)	return 0;
-		else if(nSteps==-1 || nSteps > 0)	cpu_exec(nSteps);
+static int cmd_si(char *args) {
+	char *pSteps = strtok(NULL, " ");
+	if (pSteps == NULL)	cpu_exec(1);
+	else {
+		int nSteps = atoi(pSteps);
+		if (nSteps == 0)	return 0;
+		else if (nSteps == -1 || nSteps > 0)	cpu_exec(nSteps);
 		else	printf("invalid input!\n");
 	}
 	return 0;
 }
 
-static int cmd_info(char *args){
-	char *pOpt=strtok(NULL," ");
-	if(pOpt==NULL || strcmp(pOpt,"r")){
+static int cmd_info(char *args) {
+	char *pOpt = strtok(NULL, " ");
+	if (pOpt == NULL || ( strcmp(pOpt, "r") && strcmp(pOpt,"w"))) {
 		printf("invalid input!\n");
 	}
-	else{
+	else if(!strcmp(pOpt, "r")){
 		int i;
-		for(i=0;i<8;i++)
-			printf("%s        0x%08x        %d\n",regsl[i],reg_l(i),reg_l(i));
+		for (i = 0; i < 8; i++)
+			printf("%s        0x%08x        %d\n", regsl[i], reg_l(i), reg_l(i));
 		printf("--------------------------------------------\n");
-		for(i=0;i<8;i++)
-			printf("%s        0x%08x        %d\n",regsw[i],reg_w(i),reg_w(i));
+		for (i = 0; i < 8; i++)
+			printf("%s        0x%08x        %d\n", regsw[i], reg_w(i), reg_w(i));
 		printf("--------------------------------------------\n");
-		for(i=0;i<8;i++)
-			printf("%s        0x%08x        %d\n",regsb[i],reg_b(i),reg_b(i));
+		for (i = 0; i < 8; i++)
+			printf("%s        0x%08x        %d\n", regsb[i], reg_b(i), reg_b(i));
 		printf("--------------------------------------------\n");
-		printf("eip        0x%08x        %d\n",cpu.eip,cpu.eip);
+		printf("eip        0x%08x        %d\n", cpu.eip, cpu.eip);
+	}else{
+		list_watchpoint();
 	}
 	return 0;
 }
 
-static int cmd_x(char *agrs){
-	char *pn,*paddr;
-	pn=strtok(NULL," ");
-	paddr=strtok(NULL," ");
-	if(pn!=NULL && paddr!=NULL){
-		int n=atoi(pn),addr=sscanf(paddr,"0x%x",&addr);
-		printf("start addr:0x%8x,len = %d\n",addr,n);
+static int cmd_x(char *agrs) {
+	char *pn, *paddr;
+	pn = strtok(NULL, " ");
+	paddr = strtok(NULL, " ");
+	if (pn != NULL && paddr != NULL) {
+		int n = atoi(pn), addr = sscanf(paddr, "0x%x", &addr);
+		printf("start addr:0x%8x,len = %d\n", addr, n);
 		int i;
-		for(i=0;i<n;i++){
-			if(!(i%5))	printf("\n0x%08x:",addr+i);
-			printf("  %02x",swaddr_read(addr+i,1));
+		for (i = 0; i < n; i++) {
+			if (!(i % 5))	printf("\n0x%08x:", addr + i);
+			printf("  %02x", swaddr_read(addr + i, 1));
 		}
 		puts("");
 	}
@@ -89,12 +91,35 @@ static int cmd_x(char *agrs){
 static int cmd_p(char *args) {
 	int ans;
 	bool success = true;
-	ans = expr(args,&success);
+	ans = expr(args, &success);
 	if (success == false) {
 		printf("Invalid Expression.\n");
-	}else{
-		printf("%d\n",ans);
+	} else {
+		printf("%d\n", ans);
 	}
+	return 0;
+}
+
+static int cmd_w(char* args) {
+	if (args == NULL) {
+		printf("Invalid input.\n");
+		return 0;
+	}
+	set_watchpoint(args);
+	return 0;
+}
+
+static int cmd_d(char* args) {
+	if (args == NULL) {
+		printf("Invalid input.\n");
+		return 0;
+	}
+	if(!strcmp(args,"a") || !strcmp(args,"all")){
+		init_wp_list();
+		printf("Delete all watchpoints successfully.\n");
+		return 0;
+	}
+	delete_watchpoint(atoi(args));
 	return 0;
 }
 static int cmd_help(char *args);
@@ -107,10 +132,12 @@ static struct {
 	{ "help", "Display informations about all supported commands", cmd_help },
 	{ "c", "Continue the execution of the program", cmd_c },
 	{ "q", "Exit NEMU", cmd_q },
-	{ "si","Single Step", cmd_si },
-	{ "info","Print Program Status", cmd_info },
+	{ "si", "Single Step", cmd_si },
+	{ "info", "Print Program Status", cmd_info },
 	{ "x", "Scan Memory", cmd_x },
 	{ "p", "Calc the Expression", cmd_p },
+	{ "w", "Set a watchpoint", cmd_w },
+	{ "d", "Delete a watchpoint", cmd_d },
 	/* TODO: Add more commands */
 
 };
@@ -122,15 +149,15 @@ static int cmd_help(char *args) {
 	char *arg = strtok(NULL, " ");
 	int i;
 
-	if(arg == NULL) {
+	if (arg == NULL) {
 		/* no argument given */
-		for(i = 0; i < NR_CMD; i ++) {
+		for (i = 0; i < NR_CMD; i ++) {
 			printf("%s - %s\n", cmd_table[i].name, cmd_table[i].description);
 		}
 	}
 	else {
-		for(i = 0; i < NR_CMD; i ++) {
-			if(strcmp(arg, cmd_table[i].name) == 0) {
+		for (i = 0; i < NR_CMD; i ++) {
+			if (strcmp(arg, cmd_table[i].name) == 0) {
 				printf("%s - %s\n", cmd_table[i].name, cmd_table[i].description);
 				return 0;
 			}
@@ -141,19 +168,19 @@ static int cmd_help(char *args) {
 }
 
 void ui_mainloop() {
-	while(1) {
+	while (1) {
 		char *str = rl_gets();
 		char *str_end = str + strlen(str);
 
 		/* extract the first token as the command */
 		char *cmd = strtok(str, " ");
-		if(cmd == NULL) { continue; }
+		if (cmd == NULL) { continue; }
 
 		/* treat the remaining string as the arguments,
 		 * which may need further parsing
 		 */
 		char *args = cmd + strlen(cmd) + 1;
-		if(args >= str_end) {
+		if (args >= str_end) {
 			args = NULL;
 		}
 
@@ -163,13 +190,13 @@ void ui_mainloop() {
 #endif
 
 		int i;
-		for(i = 0; i < NR_CMD; i ++) {
-			if(strcmp(cmd, cmd_table[i].name) == 0) {
-				if(cmd_table[i].handler(args) < 0) { return; }
+		for (i = 0; i < NR_CMD; i ++) {
+			if (strcmp(cmd, cmd_table[i].name) == 0) {
+				if (cmd_table[i].handler(args) < 0) { return; }
 				break;
 			}
 		}
 
-		if(i == NR_CMD) { printf("Unknown command '%s'\n", cmd); }
+		if (i == NR_CMD) { printf("Unknown command '%s'\n", cmd); }
 	}
 }

@@ -212,6 +212,7 @@ static uint32_t eval(int p,int q) {
 				if(strcmp(tokens[p].str + 1,regsw[i]) == 0)	return reg_w(i);
 				if(strcmp(tokens[p].str + 1,regsb[i]) == 0)	return reg_b(i);
 			}
+			if(strcmp(tokens[p].str + 1, "eip") == 0)	return cpu.eip;
 		}
 	}else if (check_parentheses(p,q) == true) {
 		return eval(p+1,q-1);

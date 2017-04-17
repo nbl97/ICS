@@ -29,6 +29,10 @@ typedef struct {
 		};
 	};
 	union{
+		uint32_t ip;
+		uint32_t eip;
+	};
+	union{
 		struct {
 			uint32_t CF:1;
 			uint32_t PF:1;
@@ -40,7 +44,7 @@ typedef struct {
 		};
 		uint32_t eflags;
 	}EFLAGS;
-	swaddr_t eip;
+	// swaddr_t eip;
 
 } CPU_state;
 

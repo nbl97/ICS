@@ -11,7 +11,6 @@ make_helper(concat(leave_, SUFFIX)) {
 		cpu.ebp = MEM_R(cpu.esp);
 	}
 	cpu.esp += DATA_BYTE;
-	printf("~~~%x\n",cpu.eip);
 	print_asm("leave");
 	return 1;
 }

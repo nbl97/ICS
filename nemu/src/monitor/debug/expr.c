@@ -1,5 +1,4 @@
 #include "nemu.h"
-
 /* We use the POSIX regex functions to process regular expressions.
  * Type 'man regex' for more information about POSIX regex functions.
  */
@@ -214,14 +213,18 @@ static uint32_t eval(int p,int q) {
 			}
 			if(strcmp(tokens[p].str + 1, "eip") == 0)	return cpu.eip;
 		}else if(tokens[p].type == VAR){
-			int ret;
-			ret = get_var(tokens[p].str);
+			int ret = -1,i;
+			for(i=0;i<nr_symtab_entry;i++){
+				if(strcmp(tokens[p].str,strtab + symtab[i].st_name)==0){
+					ret = symtab[i].st_value;
+					return ret;
+				}
+			}
 			if(ret==-1){
 				printf("not found the var:%s\n",tokens[p].str);
 				assert(0);
 				return 0;
 			}
-			return ret;
 		}
 	}else if (check_parentheses(p,q) == true) {
 		return eval(p+1,q-1);

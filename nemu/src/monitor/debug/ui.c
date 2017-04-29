@@ -50,10 +50,10 @@ static int cmd_si(char *args) {
 
 static int cmd_info(char *args) {
 	char *pOpt = strtok(NULL, " ");
-	if (pOpt == NULL || ( strcmp(pOpt, "r") && strcmp(pOpt,"w"))) {
+	if (pOpt == NULL || ( strcmp(pOpt, "r") && strcmp(pOpt, "w"))) {
 		printf("invalid input!\n");
 	}
-	else if(!strcmp(pOpt, "r")){
+	else if (!strcmp(pOpt, "r")) {
 		int i;
 		for (i = 0; i < 8; i++)
 			printf("%s        0x%08x        %d\n", regsl[i], reg_l(i), reg_l(i));
@@ -65,7 +65,7 @@ static int cmd_info(char *args) {
 			printf("%s        0x%08x        %d\n", regsb[i], reg_b(i), reg_b(i));
 		printf("--------------------------------------------\n");
 		printf("eip        0x%08x        %d\n", cpu.eip, cpu.eip);
-	}else{
+	} else {
 		list_watchpoint();
 	}
 	return 0;
@@ -114,7 +114,7 @@ static int cmd_d(char* args) {
 		printf("Invalid input.\n");
 		return 0;
 	}
-	if(!strcmp(args,"a") || !strcmp(args,"all")){
+	if (!strcmp(args, "a") || !strcmp(args, "all")) {
 		init_wp_list();
 		printf("Delete all watchpoints successfully.\n");
 		return 0;
@@ -122,42 +122,79 @@ static int cmd_d(char* args) {
 	delete_watchpoint(atoi(args));
 	return 0;
 }
-static int cmd_bt(char *args){
+// static int cmd_bt(char *args) {
+// 	typedef struct {
+// 		swaddr_t prev_ebp;
+// 		swaddr_t ret_addr;
+// 		uint32_t args[4];
+// 	} PartOfStackFrame;
+// 	PartOfStackFrame posf;
+// 	int j;
+// 	if (cpu.eip == 0x100000) {
+// 		printf("No Stack!\n");
+// 		return 0;
+// 	}
+// 	posf.ret_addr = cpu.ebp;
+// 	posf.prev_ebp = swaddr_read(posf.ret_addr, 4);
+// 	for (j = 0; j < 4; j++) {
+// 		posf.args[j] = swaddr_read(posf.ret_addr + 8 + j * 4, 4);
+// 	}
+// 	int i = nr_symtab_entry - 1;
+// 	while (i >= 0) {
+// 		if (symtab[i].st_info == 0x12) {
+// 			if (posf.ret_addr != 0) {
+// 				printf("%s ", strtab + symtab[i].st_name);
+// 				printf("(");
+// 				for (j = 0; j < 4; j++) {
+// 					if (j < 3)	printf("0x%x, ", posf.args[j]);
+// 					else	printf("0x%x", posf.args[j]);
+// 				}
+// 				printf(")\n");
+// 				posf.ret_addr = posf.prev_ebp;
+// 				posf.prev_ebp = swaddr_read(posf.ret_addr, 4);
+// 			}
+// 		}
+// 		i--;
+// 	}
+// 	return 0;
+// }
+static int cmd_bt(char *args) {
 	typedef struct {
 		swaddr_t prev_ebp;
 		swaddr_t ret_addr;
 		uint32_t args[4];
 	} PartOfStackFrame;
 	PartOfStackFrame posf;
-	int j;
-	if(cpu.eip == 0x100000){
-		printf("No Stack!\n");
-		return 0;
-	}
-	posf.ret_addr = cpu.ebp;
-	posf.prev_ebp = swaddr_read(posf.ret_addr,4);
-	for(j=0;j<4;j++){
-		posf.args[j] = swaddr_read(posf.ret_addr + 8 + j * 4,4);
-	}
-	int i = nr_symtab_entry-1;
-	while(i>=0){
-		if(symtab[i].st_info == 0x12){
-			if(posf.ret_addr != 0){
-				printf("%s ",strtab+symtab[i].st_name);
-				printf("(");
-				for(j=0;j<4;j++){
-					if(j<3)	printf("0x%x, ",posf.args[j]);
-					else	printf("0x%x",posf.args[j]);
-				}
-				printf(")\n");
-				posf.ret_addr = posf.prev_ebp;
-				posf.prev_ebp = swaddr_read(posf.ret_addr,4);
+	int i, j, k;
+	j = k = 0;
+	swaddr_t ebp = cpu.ebp;
+	posf.ret_addr = cpu.eip;
+	char str[10];
+	while (ebp != 0) {
+		printf("#%d 0x%08x in", j++, posf.ret_addr);
+		for (i = 0; i < nr_symtab_entry; i++) {
+			if (symtab[i].st_value <= posf.ret_addr &&
+			        posf.ret_addr <= symtab[i].st_value +
+			        symtab[i].st_size &&
+			        (symtab[i].st_info & 0xf) == STT_FUNC) {
+				strcpy(str, strtab + symtab[i].st_name);
+				k = i;
+				break;
 			}
 		}
-		i--;
+		printf(" %s\t", str);
+		posf.prev_ebp = swaddr_read(ebp, 4);
+		posf.ret_addr = swaddr_read(ebp + 4, 4);
+		for (i = 0; i < 4; i++) {
+			posf.args[i] = swaddr_read(ebp + 8 + 4 * i, 4);
+		}
+		printf("(%d, %d, %d, %d)\n",posf.args[0], posf.args[1], posf.args[2], posf.args[3]);
+		ebp = posf.prev_ebp;
 	}
 	return 0;
 }
+
+// }
 static int cmd_help(char *args);
 
 static struct {

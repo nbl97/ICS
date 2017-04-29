@@ -2,7 +2,7 @@
 #include "monitor/expr.h"
 #include "monitor/watchpoint.h"
 #include "nemu.h"
-
+#include "cpu/reg.h"
 #include <stdlib.h>
 #include <readline/readline.h>
 #include <readline/history.h>
@@ -122,6 +122,40 @@ static int cmd_d(char* args) {
 	delete_watchpoint(atoi(args));
 	return 0;
 }
+static int cmd_bt(char *args){
+	typedef struct {
+		swaddr_t prev_ebp;
+		swaddr_t ret_addr;
+		uint32_t args[4];
+	} PartOfStackFrame;
+	PartOfStackFrame posf;
+	int j;
+	if(cpu.eip == 0x100000){
+		printf("No Stack!\n");
+		return 0;
+	}
+	posf.ret_addr = cpu.eip;
+	posf.prev_ebp = swaddr_read(posf.ret_addr,4);
+	for(j=0;j<4;j++){
+		posf.args[j] = swaddr_read(posf.ret_addr + 8 + j * 4,4);
+	}
+	int i = nr_symtab_entry-1;
+	while(i>=0){
+		if(symtab[i].st_info == 0x12){
+			if(posf.ret_addr != 0){
+				printf("%s ",strtab+symtab[i].st_name);
+				for(j=0;j<4;j++){
+					printf("argument %d :0x%x ",j,posf.args[j]);
+				}
+				printf("\n");
+				posf.ret_addr = posf.prev_ebp;
+				posf.prev_ebp = swaddr_read(posf.ret_addr,4);
+			}
+		}
+		i--;
+	}
+	return 0;
+}
 static int cmd_help(char *args);
 
 static struct {
@@ -138,6 +172,7 @@ static struct {
 	{ "p", "Calc the Expression", cmd_p },
 	{ "w", "Set a watchpoint", cmd_w },
 	{ "d", "Delete a watchpoint", cmd_d },
+	{ "bt", "Print Stack Frame Stain", cmd_bt}
 	/* TODO: Add more commands */
 
 };

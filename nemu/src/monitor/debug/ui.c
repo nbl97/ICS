@@ -134,7 +134,7 @@ static int cmd_bt(char *args){
 		printf("No Stack!\n");
 		return 0;
 	}
-	posf.ret_addr = cpu.eip;
+	posf.ret_addr = cpu.ebp;
 	posf.prev_ebp = swaddr_read(posf.ret_addr,4);
 	for(j=0;j<4;j++){
 		posf.args[j] = swaddr_read(posf.ret_addr + 8 + j * 4,4);

@@ -143,11 +143,13 @@ static int cmd_bt(char *args){
 	while(i>=0){
 		if(symtab[i].st_info == 0x12){
 			if(posf.ret_addr != 0){
+				printf("0x%x  ",posf.ret_addr);
 				printf("%s ",strtab+symtab[i].st_name);
+				printf("(");
 				for(j=0;j<4;j++){
-					printf("argument %d :0x%x ",j,posf.args[j]);
+					printf(" 0x%x ",posf.args[j]);
 				}
-				printf("\n");
+				printf(")\n");
 				posf.ret_addr = posf.prev_ebp;
 				posf.prev_ebp = swaddr_read(posf.ret_addr,4);
 			}

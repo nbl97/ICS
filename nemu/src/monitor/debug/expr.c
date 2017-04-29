@@ -9,10 +9,9 @@
 enum {
 	NOTYPE = 256, EQ, UEQ, LS, RS, 
 	AND, OR, GOE, LOE, HEX, DEC, REG,
-	DEREF, NEG
+	DEREF, NEG, VAR
 	/* TODO: Add more token types */
 };
-
 static struct rule {
 	char *regex;
 	int token_type;
@@ -47,7 +46,8 @@ static struct rule {
 	{"<", '<'},                     //小于
 	{"0[xX][0-9a-fA-F]+", HEX},    //十六进制数
 	{"[0-9]+", DEC},                 //十进制数
-	{"\\$[a-z]{2,4}", REG}          //寄存器
+	{"\\$[a-z]{2,4}", REG},          //寄存器
+	{"[A-Za-z_][A-Za-z0-9_]+", VAR} //变量
 };
 
 #define NR_REGEX (sizeof(rules) / sizeof(rules[0]) )
@@ -213,6 +213,15 @@ static uint32_t eval(int p,int q) {
 				if(strcmp(tokens[p].str + 1,regsb[i]) == 0)	return reg_b(i);
 			}
 			if(strcmp(tokens[p].str + 1, "eip") == 0)	return cpu.eip;
+		}else if(tokens[p].type == VAR){
+			int ret;
+			ret = get_var(tokens[p].str);
+			if(ret==-1){
+				printf("not found the var:%s\n",tokens[p].str);
+				assert(0);
+				return 0;
+			}
+			return ret;
 		}
 	}else if (check_parentheses(p,q) == true) {
 		return eval(p+1,q-1);

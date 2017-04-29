@@ -8,6 +8,17 @@ static char *strtab = NULL;
 static Elf32_Sym *symtab = NULL;
 static int nr_symtab_entry;
 
+int get_var(char *str){
+	int i, ret = -1;
+	for(i=0;i<nr_symtab_entry;i++){
+		if(strcmp(str,strtab + symtab[i].st_name)==0){
+			ret = symtab[i].st_value;
+			return ret;
+		}
+	}
+	return ret;
+}
+
 void load_elf_tables(int argc, char *argv[]) {
 	int ret;
 	Assert(argc == 2, "run NEMU with format 'nemu [program]'");

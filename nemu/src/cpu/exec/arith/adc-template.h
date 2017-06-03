@@ -3,10 +3,11 @@
 #define instr adc
 
 static void do_execute() {
-	DATA_TYPE answer;
-	answer = op_dest->val + op_src->val + cpu.EFLAGS.CF;
+	uint32_t t, answer;
+	t = op_src->val + cpu.EFLAGS.CF;
+	answer = op_dest->val + t;
 
-	if((MSB(op_dest->val) == MSB(op_src->val)) && (MSB(op_src->val) != MSB(answer))) {
+	if((MSB(op_dest->val) == MSB(t)) && (MSB(t) != MSB(answer))) {
 		cpu.EFLAGS.OF = 1;
 	}
 	else {
@@ -19,10 +20,10 @@ static void do_execute() {
 	else {
 		cpu.EFLAGS.ZF = 0;
 	}
-	if((MSB(op_dest->val) == 1) && (MSB(op_src->val) == 1)) {
+	if((MSB(op_dest->val) == 1) && (MSB(t) == 1)) {
 		cpu.EFLAGS.CF = 1;
 	}
-	else if(((MSB(op_dest->val) ^ MSB(op_src->val)) == 1) && (MSB(answer) == 0)) {
+	else if(((MSB(op_dest->val) ^ MSB(t)) == 1) && (MSB(answer) == 0)) {
 		cpu.EFLAGS.CF = 1;
 	}
 	else {
@@ -46,6 +47,12 @@ static void do_execute() {
 	print_asm_template2();
 }
 
+make_instr_helper(i2rm)
 make_instr_helper(r2rm)
+make_instr_helper(rm2r)
+make_instr_helper(i2a)
+#if DATA_BYTE == 2 || DATA_BYTE == 4
+make_instr_helper(si2rm)
+#endif
 
 #include "cpu/exec/template-end.h"

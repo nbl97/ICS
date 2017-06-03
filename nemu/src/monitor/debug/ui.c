@@ -203,9 +203,8 @@ static int cmd_cache(char *args) {
 	char *arg = strtok(NULL, " ");
 	swaddr_t addr = strtoul(arg, NULL, 16);
 	int i = cache1_read(addr);
+	printf("cache block address: 0x%x\ncache block tag: 0x%x\n", addr, cache1[i].tag);
 	int j;
-	printf("cache block address: 0x%x\n", addr);
-	printf("cache block tag: 0x%x\n", cache1[i].tag);
 	for(j = 0; j < 64; j++) {
 		printf("%x ", cache1[i].data[j]);
 	}
@@ -230,7 +229,7 @@ static struct {
 	{ "w", "Set a watchpoint", cmd_w },
 	{ "d", "Delete a watchpoint", cmd_d },
 	{ "bt", "Print Stack Frame Stain", cmd_bt},
-	{ "cache", "Print cache block and its' tag", cmd_cache }
+	{ "cache", "Print cache block", cmd_cache }
 	/* TODO: Add more commands */
 
 };

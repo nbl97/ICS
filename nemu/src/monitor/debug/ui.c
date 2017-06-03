@@ -6,8 +6,11 @@
 #include <stdlib.h>
 #include <readline/readline.h>
 #include <readline/history.h>
+#include "memory/cache.h"
 
 void cpu_exec(uint32_t);
+
+int cache1_read(hwaddr_t);
 
 /* We use the ``readline'' library to provide more flexibility to read from stdin. */
 char* rl_gets() {
@@ -195,6 +198,21 @@ static int cmd_bt(char *args) {
 }
 
 // }
+
+static int cmd_cache(char *args) {
+	char *arg = strtok(NULL, " ");
+	swaddr_t addr = strtoul(arg, NULL, 16);
+	int i = cache1_read(addr);
+	int j;
+	printf("cache block address: 0x%x\n", addr);
+	printf("cache block tag: 0x%x\n", cache1[i].tag);
+	for(j = 0; j < 64; j++) {
+		printf("%x ", cache1[i].data[j]);
+	}
+	printf("\n");
+	return 0;
+}
+
 static int cmd_help(char *args);
 
 static struct {
@@ -211,7 +229,8 @@ static struct {
 	{ "p", "Calc the Expression", cmd_p },
 	{ "w", "Set a watchpoint", cmd_w },
 	{ "d", "Delete a watchpoint", cmd_d },
-	{ "bt", "Print Stack Frame Stain", cmd_bt}
+	{ "bt", "Print Stack Frame Stain", cmd_bt},
+	{ "cache", "Print cache block and its' tag", cmd_cache }
 	/* TODO: Add more commands */
 
 };

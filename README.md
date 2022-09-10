@@ -40,7 +40,7 @@ NEMU(NJU Emulator) is a simple but complete full-system x86 emulator designed fo
 
 Some small C programs to test the implementation of NEMU.
 
-## newlib
+## Newlib
 
 newlib(https://sourceware.org/newlib) is a C library for embedding systems. It requires minimal run-time support and is very friendly to NEMU.
 
